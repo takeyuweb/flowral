@@ -20,6 +20,10 @@ export class FlowralDispatcher
 	 */
 	registerSubject(key, subject = void 0) {
 
+		if (!key) {
+			throw new Error('Subject key name not given.');
+		}
+
 		if (!subject) {
 			subject = new Rx.Subject();
 		}
