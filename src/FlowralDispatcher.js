@@ -1,176 +1,65 @@
 
 import Rx from 'rx-lite';
+import FlowralContext from './FlowralContext.js';
 
-const DefaultKeyName = '__DEFAULT_KEY__';
 
-export class FlowralDispatcher
+export default class FlowralDispatcher
 {
 
-	constructor() {
-		this.observers = {};
-		this.observables = {};
-		this.registerSubject(DefaultKeyName);
+	constructor(context) {
+
+		if (!context) {
+			throw new Error('Must be given context.');
+		} else if (!(context instanceof FlowralContext)) {
+			console.error('Unexpected context. Expected FlowralContext object.', context);
+			throw new Error('Unexpected context. Expected FlowralContext object.');
+		}
+
+		this.__context__ = context;
 	}
 
-	/**
-	 * Subject を追加登録します。
-	 *
-	 * @param key
-	 * @param subject
-	 */
+	get context() {
+		return this.__context__;
+	}
+
+	observer(key) {
+		return this.context.observer(key);
+	}
+
+	observable(key) {
+		return this.context.observable(key);
+	}
+
+	subscribe(key, onNext, onError, onComplete) {
+		return this.context.observable(key).subscribe(onNext, onError, onComplete);
+	}
+
+	dispatch(key, data) {
+		this.context.observer(key).onNext(data);
+	}
+
+	dispatchError(key, data) {
+		this.context.observer(key).onError(data);
+	}
+
+	dispatchComplete(key, data) {
+		this.context.observer(key).onComplete(data);
+	}
+
 	registerSubject(key, subject = void 0) {
 
-		if (!key) {
-			throw new Error('Subject key name not given.');
-		}
-
-		if (!subject) {
-			subject = new Rx.Subject();
-		}
-
-		this.registerObserver(key, subject);
-		this.registerObservable(key, subject);
-
-		return subject;
+		return this.context.registerSubject(key, subject);
 	}
 
-	/**
-	 * Observer を登録する。
-	 * @param key
-	 * @param observer
-	 */
 	registerObserver(key, observer) {
 
-		if (this.observers[key]) {
-			throw new Error(`observer key exists already. "${key}"`);
-		}
-		if (!observer) {
-			throw new Error('Must take an observer.');
-		}
-
-		this.observers[key] = observer;
+		return this.context.registerObserver(key, observer);
 	}
 
-	/**
-	 * Observable を登録する。
-	 * @param key
-	 * @param observable
-	 */
 	registerObservable(key, observable) {
 
-		if (this.observables[key]) {
-			throw new Error(`Observable key exists already. "${key}"`);
-		}
-		if (!observable) {
-			throw new Error('Must take an observable.');
-		}
-
-		this.observables[key] = observable;
+		return this.context.registerObservable(key, observable);
 	}
 
-
-	/**
-	 * 登録されている Observer を取得する
-	 * @param key mixed Optional.
-	 * @returns Rx.Observer
-	 */
-	observer(key) {
-
-		if (!key) {
-			key = DefaultKeyName;
-		}
-		if (!this.observers[key]) {
-			throw new Error(`Observer key not found. ${key}`);
-		}
-
-		return this.observers[key];
-	}
-
-	/**
-	 * 登録されている Observable を取得する
-	 * @param key mixed Optional.
-	 * @returns Rx.Observable
-	 */
-	observable(key) {
-
-		if (!key) {
-			key = DefaultKeyName;
-		}
-		if (!this.observables[key]) {
-			throw new Error(`Observable key not found. ${key}`);
-		}
-
-		return this.observables[key];
-	}
-
-	/**
-	 * 登録されている Observable を購読する。
-	 * this.observable(key).subscribe(onNext, onError, onComplete) のショートカット
-	 *
-	 * @param key mixed Optional.
-	 * @param onNext
-	 * @param onError Optional.
-	 * @param onComplete Optional.
-	 * @returns Rx.Disposable Optional.
-	 */
-	subscribe(key, onNext, onError, onComplete) {
-
-		if (typeof key instanceof Function) {
-			onComplete = onError;
-			onError = onNext;
-			onNext = key;
-			key = DefaultKeyName;
-		}
-
-		return this.observable(key).subscribe(onNext, onError, onComplete);
-	}
-
-	/**
-	 *
-	 * @param key Optional.
-	 * @param data Optional.
-	 */
-	dispatch(key, data) {
-
-		if (arguments.length <= 1) {
-			data = key;
-			key = DefaultKeyName;
-		}
-
-		this.observer(key).onNext(data);
-	}
-
-	/**
-	 *
-	 * @param key Optional.
-	 * @param data Optional.
-	 */
-	dispatchError(key, data) {
-
-		if (arguments.length <= 1) {
-			data = key;
-			key = DefaultKeyName;
-		}
-
-		this.observer(key).onError(data);
-	}
-
-	/**
-	 *
-	 * @param key Optional.
-	 * @param data Optional.
-	 */
-	dispatchComplete(key, data) {
-
-		if (arguments.length <= 1) {
-			data = key;
-			key = DefaultKeyName;
-		}
-
-		this.observer(key).onComplete(data);
-	}
 
 }
-
-
-export default FlowralDispatcher;
