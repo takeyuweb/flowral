@@ -18,6 +18,8 @@ export default class FlowralDispatcher
 		this.__context__ = context;
 	}
 
+
+
 	get context() {
 		return this.__context__;
 	}
