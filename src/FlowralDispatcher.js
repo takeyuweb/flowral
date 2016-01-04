@@ -1,67 +1,113 @@
 
 import Rx from 'rx-lite';
-import FlowralContext from './FlowralContext.js';
 
 
 export default class FlowralDispatcher
 {
 
-	constructor(context) {
+	constructor() {
 
-		if (!context) {
-			throw new Error('Must be given context.');
-		} else if (!(context instanceof FlowralContext)) {
-			console.error('Unexpected context. Expected FlowralContext object.', context);
-			throw new Error('Unexpected context. Expected FlowralContext object.');
+		this.observers = {};
+		this.observables = {};
+	}
+
+	/**
+	 * Subject を追加登録します。
+	 *
+	 * @param key
+	 * @param subject
+	 */
+	registerSubject(key, subject = void 0) {
+
+		if (!key) {
+			throw new Error('Subject key name not given.');
 		}
 
-		this.__context__ = context;
+		if (!subject) {
+			subject = new Rx.Subject();
+		}
+
+		this.registerObserver(key, subject);
+		this.registerObservable(key, subject);
+
+		return subject;
+	}
+
+	/**
+	 * Observer を登録する。
+	 * @param key
+	 * @param observer
+	 */
+	registerObserver(key, observer = void 0) {
+
+		if (!observer) {
+			observer = new Rx.Subject();
+		}
+
+		this.observers[key] = observer;
+	}
+
+	/**
+	 * Observable を登録する。
+	 * @param key
+	 * @param observable
+	 */
+	registerObservable(key, observable = void 0) {
+
+		if (!observable) {
+			observable = new Rx.Subject();
+		}
+
+		this.observables[key] = observable;
 	}
 
 
-
-	get context() {
-		return this.__context__;
-	}
-
+	/**
+	 * key に対応する Observer を取得する。
+	 * @param key mixed
+	 * @returns Rx.Observer
+	 */
 	observer(key) {
-		return this.context.observer(key);
+
+		if (!this.observers[key]) {
+			this.registerSubject(key);
+		}
+
+		return this.observers[key];
 	}
 
+	/**
+	 * key に対応する Observable を取得する。
+	 * @param key mixed
+	 * @returns Rx.Observable
+	 */
 	observable(key) {
-		return this.context.observable(key);
+
+		if (!this.observables[key]) {
+			this.registerSubject(key);
+		}
+
+		return this.observables[key];
 	}
+
 
 	subscribe(key, onNext, onError, onComplete) {
-		return this.context.observable(key).subscribe(onNext, onError, onComplete);
+		return this.observable(key).subscribe(onNext, onError, onComplete);
 	}
 
 	dispatch(key, data) {
-		this.context.observer(key).onNext(data);
+		this.observer(key).onNext(data);
 	}
 
 	dispatchError(key, data) {
-		this.context.observer(key).onError(data);
+		this.observer(key).onError(data);
 	}
 
 	dispatchComplete(key, data) {
-		this.context.observer(key).onComplete(data);
+		this.observer(key).onComplete(data);
 	}
 
-	registerSubject(key, subject = void 0) {
 
-		return this.context.registerSubject(key, subject);
-	}
-
-	registerObserver(key, observer) {
-
-		return this.context.registerObserver(key, observer);
-	}
-
-	registerObservable(key, observable) {
-
-		return this.context.registerObservable(key, observable);
-	}
 
 
 }
